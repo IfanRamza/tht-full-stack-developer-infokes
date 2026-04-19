@@ -1,0 +1,13 @@
+{
+  "name": "@explorer/backend",
+  "version": "1.0.0",
+  "dependencies": {
+    "@explorer/shared": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9",
+    "uuidv7": "^1.2.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  }
+}
