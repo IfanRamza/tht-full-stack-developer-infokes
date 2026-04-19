@@ -1,4 +1,6 @@
-export type ItemType = 'folder' | 'file';
+import { ITEM_TYPE } from "../constants";
+
+export type ItemType = (typeof ITEM_TYPE)[keyof typeof ITEM_TYPE];
 
 export interface Item {
   id: string;
@@ -18,7 +20,7 @@ export interface TreeNode extends Item {
   children: TreeNode[];
 }
 
-export interface FolderContents {
+export interface FolderContent {
   folder: Item;
   children: Item[];
 }

@@ -12,11 +12,6 @@ export interface ApiError {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
-}
-
-export interface SearchParams {
-  query: string;
-  limit?: number;
 }
