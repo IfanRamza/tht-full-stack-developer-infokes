@@ -1,6 +1,6 @@
 import Elysia from "elysia";
 import { errorResponse } from "../utils/response";
-import { ConflictError, NotFoundError, ValidationError } from "../domain/models/errors";
+import { ConflictError, NotFoundError, ValidationError } from "../domain/errors/domain.error";
 
 export const errorHandlerPlugin = new Elysia({ name: "error-handler" }).onError(
   ({ code, error, set }) => {

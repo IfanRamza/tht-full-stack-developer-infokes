@@ -23,4 +23,5 @@ export interface TreeNode extends Item {
 export interface FolderContent {
   folder: Item;
   children: Item[];
+  totalElements: number;
 }
