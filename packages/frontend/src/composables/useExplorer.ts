@@ -44,6 +44,15 @@ router.afterEach((to) => {
     }
   }
 
+  // If hitting the root, clear the right pane instantly.
+  if (!pathString) {
+    selectedFolderPath.value = ''
+    selectedFolderName.value = null
+    children.value = []
+    contentError.value = null
+    return 
+  }
+
   _fetchChildren(pathString)
 })
 
