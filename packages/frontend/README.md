@@ -26,6 +26,7 @@ src/
 │   ├── base/                   # Reusable primitive components (atoms)
 │   │   ├── BaseButton.vue      # Button with variant support (primary, ghost, icon)
 │   │   ├── BaseInput.vue       # Styled input with v-model support
+│   │   ├── EmptyState.vue      # Atomic container for warnings/loading/404s
 │   │   └── FileIcon.vue        # Adaptive file/folder icon (grid & list sizes)
 │   │
 │   ├── layouts/
@@ -64,6 +65,7 @@ src/
 │
 ├── utils/
 │   ├── formatters.ts           # formatSize(), formatDate()
+│   ├── sort.ts                 # Array isolation enforcing folders above files
 │   └── fileIcons.ts            # getFileEmoji() lookup map
 │
 ├── App.vue                     # Root: assembles layout with slot-based injection
@@ -135,11 +137,14 @@ State is declared at **module scope** inside each composable file. Every compone
 ### URL-Driven State (Vue Router)
 Instead of reinventing custom in-memory history arrays, the application URL acts as the single source of truth for the active folder state. `useExplorer.ts` utilizes a `router.afterEach` hook to synchronize navigation events with API data loading. This provides native Browser Back/Forward history integration and shareable deep-linking out-of-the-box, without needing a standard `<router-view>` layout!
 
-### AbortController in Search
-`useSearch` cancels the previous in-flight HTTP request before issuing a new one, preventing stale responses from overwriting newer results on fast typing.
+### URL Query Search Binding
+Searches performed via the `useSearch` module map seamlessly backward to the `?q=` parameter using `router.replace()`. Rehydrating searches through external linkage, or via simple Page Refreshes handles fetching naturally rather than dropping cached query state.
+
+### Bounded Localized Searching
+By leveraging the existing JSON folder graphs instantiated natively via the left-dashboard Explorer tree, database-search API requests append logical database parameter limits to prevent `This PC` global searches; guaranteeing users natively replicate standard Windows Explorer local-hierarchy constraints without suffering database `N+1` tree-rebuilding queries on search completion strings!
 
 ### Isolated Error Boundaries
-The global `useExplorer` composable cleanly separates `treeError` (startup loading failures) from `contentError` (404 Path routing failures). This guarantees that a user landing on an invalid URL path in the main panel will see a scoped generic 404 message, without the error aggressively dismounting their entire left-sidebar tree navigation.
+The global `useExplorer` composable cleanly separates `treeError` (startup loading failures) from `contentError` (404 Path routing failures). This guarantees that a user landing on an invalid URL path in the main panel will see a scoped generic 404 message mapped to our Atomic `<EmptyState>`, without the error aggressively dismounting their entire left-sidebar tree navigation.
 
 ### Slot-Based Layout Injection
 `App.vue` injects all major regions (`#toolbar`, `#sidebar`, `#content`, `#footer`) into `ExplorerLayout` as named slots. The layout itself only manages the resizable sidebar — it has no knowledge of any application data.

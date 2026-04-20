@@ -1,7 +1,7 @@
 import { router } from '@/router'
 import { itemApi } from '@/services/api'
 import type { Item, TreeNode } from '@explorer/shared'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const tree = ref<TreeNode[]>([])
 const selectedFolderPath = ref<string>('')
@@ -16,6 +16,19 @@ const contentError = ref<string | null>(null)
 // History tracking
 const canGoBack = ref(false)
 const canGoForward = ref(false)
+
+// In-Memory UUID -> Folder Name map for translating backend paths
+const idToNameMap = computed(() => {
+  const map: Record<string, string> = {}
+  function traverse(nodes: TreeNode[]) {
+    for (const node of nodes) {
+      map[node.id] = node.name
+      if (node.children) traverse(node.children)
+    }
+  }
+  traverse(tree.value)
+  return map
+})
 
 // Bind router to module state
 router.afterEach((to) => {
@@ -83,13 +96,29 @@ export function useExplorer() {
 
   function goUp() {
     if (!selectedFolderPath.value) return // Already at root
-    
+
     // Mathematically slice off the last segment of the URL path
     const segments = selectedFolderPath.value.split('/').filter(Boolean)
     segments.pop() // remove current directory
     const parentPath = segments.join('/')
-    
+
     router.push({ path: `/${parentPath}` })
+  }
+
+  /**
+   * Resolves a backend DB UUID path like `/uuid1/uuid2` into `/Documents/Work`
+   * by matching against the loaded frontend tree map.
+   */
+  function getHumanReadableLocation(uuidPath: string) {
+    if (!uuidPath) return '/'
+
+    const ids = uuidPath.split('/').filter(Boolean)
+    // The DB path includes the item's own ID at the end.
+    // We only want the *location* (the parent's path).
+    ids.pop()
+
+    if (ids.length === 0) return '/'
+    return '/' + ids.map((id) => idToNameMap.value[id] || id).join('/')
   }
 
   onMounted(() => {
@@ -114,5 +143,6 @@ export function useExplorer() {
     goBack,
     goForward,
     goUp,
+    getHumanReadableLocation,
   }
 }

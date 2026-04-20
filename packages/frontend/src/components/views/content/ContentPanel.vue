@@ -4,9 +4,11 @@ import { useExplorer } from '@/composables/useExplorer'
 import { useSearch } from '@/composables/useSearch'
 import { AlertTriangle, FolderOpen, LayoutGrid, List, Search, SearchX } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
+import EmptyState from '@/components/base/EmptyState.vue'
 import GridSkeleton from '../skeleton/GridSkeleton.vue'
 import ListSkeleton from '../skeleton/ListSkeleton.vue'
 import ContentItem from './ContentItem.vue'
+import { sortItems } from '@/utils/sort'
 
 const { children, isChildrenLoading, selectedFolderPath, selectedFolderName, contentError } =
   useExplorer()
@@ -15,8 +17,8 @@ const { searchResults, isSearching, searchQuery } = useSearch()
 const viewMode = ref<'grid' | 'list'>('grid')
 
 const itemsToDisplay = computed(() => {
-  if (searchQuery.value.trim()) return searchResults.value
-  return children.value
+  const source = searchQuery.value.trim() ? searchResults.value : children.value
+  return sortItems(source)
 })
 
 const isLoading = computed(() => {
@@ -25,7 +27,11 @@ const isLoading = computed(() => {
 })
 
 const displayTitle = computed(() => {
-  if (searchQuery.value.trim()) return `Search Results in "This PC"`
+  if (searchQuery.value.trim()) {
+    return selectedFolderName.value 
+      ? `Search Results in "${selectedFolderName.value}"`
+      : `Search Results in "This PC"`
+  }
   return selectedFolderName.value || 'Home'
 })
 </script>
@@ -68,76 +74,43 @@ const displayTitle = computed(() => {
     <!-- Main Lists -->
     <div class="flex-1">
       <!-- Search No Result State -->
-      <div
+      <EmptyState
         v-if="searchQuery && !isLoading && itemsToDisplay.length === 0"
-        class="flex h-full flex-col items-center justify-center py-20 text-center"
-      >
-        <div
-          class="bg-bg-active text-text-muted mb-4 flex h-20 w-20 items-center justify-center rounded-full"
-        >
-          <SearchX class="h-10 w-10 opacity-50" />
-        </div>
-        <h3 class="text-text-primary text-lg font-medium">
-          No results for "{{ searchQuery }}"
-        </h3>
-        <p class="text-text-muted mt-2 max-w-[240px] text-sm">
-          Try checking for typos or searching for a different keyword.
-        </p>
-      </div>
+        :icon="SearchX"
+        theme="default"
+        title="No results found"
+        :description="`Try checking for typos or searching for a different keyword instead of &quot;${searchQuery}&quot;.`"
+      />
 
       <!-- Error State -->
-      <div
+      <EmptyState
         v-else-if="contentError && !searchQuery"
-        class="flex h-full flex-col items-center justify-center py-20 text-center"
-      >
-        <div
-          class="bg-red-500/10 text-red-500 mb-5 flex h-24 w-24 items-center justify-center rounded-full"
-        >
-          <AlertTriangle class="h-12 w-12" />
-        </div>
-        <h3 class="text-text-primary text-xl font-medium">Path Not Found</h3>
-        <p class="mt-3 max-w-[320px] text-sm text-red-400">
-          {{ contentError }}
-        </p>
-      </div>
+        :icon="AlertTriangle"
+        theme="danger"
+        title="Path Not Found"
+        :description="contentError"
+      />
 
       <!-- No Selection State (Only show if not searching) -->
-      <div
-        v-else-if="
-          !selectedFolderPath && !searchQuery && itemsToDisplay.length === 0
-        "
-        class="flex h-full flex-col items-center justify-center py-20 text-center"
-      >
-        <div
-          class="bg-accent-blue/10 text-accent-blue mb-5 flex h-24 w-24 items-center justify-center rounded-full"
-        >
-          <FolderOpen class="h-12 w-12" />
-        </div>
-        <h3 class="text-text-primary text-xl font-medium">Select a folder</h3>
-        <p class="text-text-secondary mt-3 max-w-[280px] text-sm">
-          Click on any directory from the left sidebar to view its contents.
-        </p>
-      </div>
+      <EmptyState
+        v-else-if="!selectedFolderPath && !searchQuery && itemsToDisplay.length === 0"
+        :icon="FolderOpen"
+        theme="primary"
+        title="Select a folder"
+        description="Click on any directory from the left sidebar to view its contents."
+      />
 
       <!-- Loading State -->
       <div v-else-if="isLoading">
         <!-- Search Loading State -->
-        <div
+        <EmptyState
           v-if="searchQuery.trim()"
-          class="animate-in fade-in flex h-full flex-col items-center justify-center py-20 text-center duration-300"
-        >
-          <div
-            class="bg-accent-blue/5 mb-6 flex h-24 w-24 items-center justify-center rounded-full"
-          >
-            <Search class="text-accent-blue h-12 w-12 animate-pulse" />
-          </div>
-          <h3 class="text-text-primary text-xl font-medium tracking-tight">
-            Searching...
-          </h3>
-          <p class="text-text-muted mt-2 max-w-[260px] text-sm">
-            Looking for "{{ searchQuery }}" across your files...
-          </p>
-        </div>
+          :icon="Search"
+          theme="primary"
+          :animate-icon="true"
+          title="Searching..."
+          :description="`Looking for &quot;${searchQuery}&quot; across your files...`"
+        />
 
         <!-- Folder Loading State (Skeletons) -->
         <template v-else>
@@ -165,12 +138,13 @@ const displayTitle = computed(() => {
           v-if="viewMode === 'list'"
           class="border-border text-text-secondary mb-1 flex items-center border-b px-4 py-2 text-[11px] font-semibold tracking-wider uppercase"
         >
-          <div class="mr-3 w-8"></div>
+          <div class="mr-3 w-8 shrink-0"></div>
           <!-- icon space -->
-          <div class="w-[200px] flex-1 pr-4">Name</div>
-          <div class="w-[200px] pr-4">Date modified</div>
-          <div class="w-[120px] pr-4">Type</div>
-          <div class="w-[100px] text-right">Size</div>
+          <div class="flex-1 pr-4" :class="searchQuery.trim() ? 'min-w-[150px]' : 'min-w-[200px]'">Name</div>
+          <div v-if="searchQuery.trim()" class="flex-1 min-w-[150px] pr-4">Location</div>
+          <div class="w-[160px] shrink-0 pr-4">Date modified</div>
+          <div class="w-[120px] shrink-0 pr-4">Type</div>
+          <div class="w-[100px] shrink-0 text-right">Size</div>
         </div>
 
         <!-- Render Items -->
@@ -186,6 +160,7 @@ const displayTitle = computed(() => {
             :key="item.id"
             :item="item"
             :view-mode="viewMode"
+            :show-location="!!searchQuery.trim()"
           />
         </div>
       </div>

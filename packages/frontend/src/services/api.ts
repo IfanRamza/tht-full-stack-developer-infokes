@@ -60,11 +60,12 @@ export const itemApi = {
     fetchApi<FolderContent>(`/v1/items/by-path?path=${encodeURIComponent(path)}`),
 
   /**
-   * Searches for items by name across the entire structure.
+   * Searches for items by name, bounded by an optional directory path string.
    * Accepts an AbortSignal for cancelling stale in-flight requests.
    */
-  search: (query: string, signal?: AbortSignal): Promise<Item[]> =>
-    fetchApi<Item[]>(`/v1/items/search?q=${encodeURIComponent(query)}`, {
-      signal,
-    }),
+  search: (query: string, path?: string, signal?: AbortSignal): Promise<Item[]> => {
+    let url = `/v1/items/search?q=${encodeURIComponent(query)}`
+    if (path) url += `&path=${encodeURIComponent(path)}`
+    return fetchApi<Item[]>(url, { signal })
+  }
 }

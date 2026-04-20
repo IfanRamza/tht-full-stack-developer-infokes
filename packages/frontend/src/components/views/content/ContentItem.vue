@@ -8,12 +8,13 @@ import FileIcon from '../../base/FileIcon.vue'
 const props = defineProps<{
   item: Item
   viewMode?: 'grid' | 'list'
+  showLocation?: boolean
 }>()
 
 const isFolder = computed(() => props.item.type === 'folder')
 const mode = computed(() => props.viewMode || 'grid')
 
-const { selectFolder, selectedFolderPath } = useExplorer()
+const { selectFolder, selectedFolderPath, getHumanReadableLocation } = useExplorer()
 
 const handleNavigate = () => {
   if (isFolder.value) {
@@ -70,27 +71,37 @@ const handleNavigate = () => {
 
     <!-- Name -->
     <div
-      class="text-text-primary w-[200px] flex-1 truncate pr-4 text-[13px] font-medium"
+      class="text-text-primary flex-1 truncate pr-4 text-[13px] font-medium"
+      :class="showLocation ? 'min-w-[150px]' : 'min-w-[200px]'"
     >
       {{ item.name }}
     </div>
 
+    <!-- Location -->
+    <div
+      v-if="showLocation"
+      class="text-text-secondary flex-1 min-w-[150px] truncate pr-4 text-[12px] opacity-70 hover:opacity-100"
+      :title="getHumanReadableLocation(item.path)"
+    >
+      {{ getHumanReadableLocation(item.path) }}
+    </div>
+
     <!-- Date Modified -->
     <div
-      class="text-text-secondary w-[200px] truncate pr-4 text-[12px] capitalize"
+      class="text-text-secondary w-[160px] shrink-0 truncate pr-4 text-[12px] capitalize"
     >
       {{ formatDate(item.updatedAt) }}
     </div>
 
     <!-- Type -->
     <div
-      class="text-text-secondary w-[120px] truncate pr-4 font-mono text-[12px]"
+      class="text-text-secondary w-[120px] shrink-0 truncate pr-4 font-mono text-[12px]"
     >
       {{ isFolder ? 'File Folder' : item.name.split('.').pop() + ' File' }}
     </div>
 
     <!-- Size -->
-    <div class="text-text-secondary w-[100px] truncate text-right text-[12px]">
+    <div class="text-text-secondary w-[100px] shrink-0 truncate text-right text-[12px]">
       {{ isFolder ? '' : formatSize(item.size) }}
     </div>
   </div>
