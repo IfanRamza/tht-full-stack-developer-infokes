@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useExplorer } from '@/composables/useExplorer'
+import { AlertTriangle } from 'lucide-vue-next'
 import FolderTreeNode from './FolderTreeNode.vue'
 
-const { tree, isTreeLoading, error } = useExplorer()
+const { tree, isTreeLoading, treeError } = useExplorer()
 </script>
 
 <template>
@@ -19,8 +20,9 @@ const { tree, isTreeLoading, error } = useExplorer()
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="px-5 py-2 text-sm text-red-400">
-      {{ error }}
+    <div v-else-if="treeError" class="flex items-start gap-2 px-5 py-2 text-[13px] text-red-400">
+      <AlertTriangle class="h-4 w-4 shrink-0 mt-0.5 opacity-80" />
+      <span class="leading-tight">{{ treeError }}</span>
     </div>
 
     <!-- Empty State -->
@@ -37,7 +39,7 @@ const { tree, isTreeLoading, error } = useExplorer()
         v-for="node in tree"
         :key="node.id"
         :node="node"
-        :depth="0"
+        current-path=""
       />
     </div>
   </div>

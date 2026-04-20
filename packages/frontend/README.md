@@ -10,6 +10,7 @@ The frontend package for the **Windows Explorer-like File Manager** — a single
 |---|---|
 | Vue 3 (Composition API) | UI framework |
 | TypeScript | Type safety |
+| Vue Router v4 | Application state routing |
 | Vite 8 | Dev server & build tool |
 | Tailwind CSS v4 | Utility-first styling |
 | Lucide Vue Next | Icon library |
@@ -46,10 +47,14 @@ src/
 │       │   └── ListSkeleton.vue   # Loading placeholder (list view)
 │       └── toolbar/
 │           ├── Toolbar.vue        # Top bar wrapper
+│           ├── Breadcrumb.vue     # Path-based breadcrumb generator
 │           └── SearchBar.vue      # Debounced search input with clear button
 │
+├── router/                     # URL state machine setup
+│   └── index.ts                # Route definitions
+│
 ├── composables/                # Singleton state hooks (no Pinia needed)
-│   ├── useExplorer.ts          # Folder tree + children fetch + selection state
+│   ├── useExplorer.ts          # State synced with Router + loading logic
 │   ├── useFolderTree.ts        # Expand/collapse state for tree nodes
 │   ├── useResizable.ts         # Drag-to-resize sidebar logic
 │   └── useSearch.ts            # Debounced search w/ AbortController
@@ -127,8 +132,14 @@ Components are organized into three tiers:
 ### Singleton Composables (No Pinia)
 State is declared at **module scope** inside each composable file. Every component that calls `useExplorer()` or `useSearch()` gets the exact same reactive refs — no global store required.
 
+### URL-Driven State (Vue Router)
+Instead of reinventing custom in-memory history arrays, the application URL acts as the single source of truth for the active folder state. `useExplorer.ts` utilizes a `router.afterEach` hook to synchronize navigation events with API data loading. This provides native Browser Back/Forward history integration and shareable deep-linking out-of-the-box, without needing a standard `<router-view>` layout!
+
 ### AbortController in Search
 `useSearch` cancels the previous in-flight HTTP request before issuing a new one, preventing stale responses from overwriting newer results on fast typing.
+
+### Isolated Error Boundaries
+The global `useExplorer` composable cleanly separates `treeError` (startup loading failures) from `contentError` (404 Path routing failures). This guarantees that a user landing on an invalid URL path in the main panel will see a scoped generic 404 message, without the error aggressively dismounting their entire left-sidebar tree navigation.
 
 ### Slot-Based Layout Injection
 `App.vue` injects all major regions (`#toolbar`, `#sidebar`, `#content`, `#footer`) into `ExplorerLayout` as named slots. The layout itself only manages the resizable sidebar — it has no knowledge of any application data.

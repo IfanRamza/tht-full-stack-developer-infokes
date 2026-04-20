@@ -13,11 +13,14 @@ const props = defineProps<{
 const isFolder = computed(() => props.item.type === 'folder')
 const mode = computed(() => props.viewMode || 'grid')
 
-const { selectFolder } = useExplorer()
+const { selectFolder, selectedFolderPath } = useExplorer()
 
 const handleNavigate = () => {
   if (isFolder.value) {
-    selectFolder(props.item.id)
+    const itemPath = selectedFolderPath.value
+      ? `${selectedFolderPath.value}/${props.item.name}`
+      : props.item.name
+    selectFolder(itemPath)
   }
 }
 </script>

@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import BaseButton from '@/components/base/BaseButton.vue'
 import { useExplorer } from '@/composables/useExplorer'
 import { useSearch } from '@/composables/useSearch'
-import { FolderOpen, LayoutGrid, List, Search, SearchX } from 'lucide-vue-next'
+import { AlertTriangle, FolderOpen, LayoutGrid, List, Search, SearchX } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import GridSkeleton from '../skeleton/GridSkeleton.vue'
 import ListSkeleton from '../skeleton/ListSkeleton.vue'
 import ContentItem from './ContentItem.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
 
-const { children, isChildrenLoading, selectedFolderId, selectedFolderName } =
+const { children, isChildrenLoading, selectedFolderPath, selectedFolderName, contentError } =
   useExplorer()
 const { searchResults, isSearching, searchQuery } = useSearch()
 
@@ -44,7 +44,9 @@ const displayTitle = computed(() => {
       >
         <BaseButton
           variant="ghost"
-          :class="{ 'bg-bg-active text-text-primary shadow-sm': viewMode === 'grid' }"
+          :class="{
+            'bg-bg-active text-text-primary shadow-sm': viewMode === 'grid',
+          }"
           title="Grid View"
           @click="viewMode = 'grid'"
         >
@@ -52,7 +54,9 @@ const displayTitle = computed(() => {
         </BaseButton>
         <BaseButton
           variant="ghost"
-          :class="{ 'bg-bg-active text-text-primary shadow-sm': viewMode === 'list' }"
+          :class="{
+            'bg-bg-active text-text-primary shadow-sm': viewMode === 'list',
+          }"
           title="List View"
           @click="viewMode = 'list'"
         >
@@ -81,9 +85,27 @@ const displayTitle = computed(() => {
         </p>
       </div>
 
+      <!-- Error State -->
+      <div
+        v-else-if="contentError && !searchQuery"
+        class="flex h-full flex-col items-center justify-center py-20 text-center"
+      >
+        <div
+          class="bg-red-500/10 text-red-500 mb-5 flex h-24 w-24 items-center justify-center rounded-full"
+        >
+          <AlertTriangle class="h-12 w-12" />
+        </div>
+        <h3 class="text-text-primary text-xl font-medium">Path Not Found</h3>
+        <p class="mt-3 max-w-[320px] text-sm text-red-400">
+          {{ contentError }}
+        </p>
+      </div>
+
       <!-- No Selection State (Only show if not searching) -->
       <div
-        v-else-if="!selectedFolderId && !searchQuery"
+        v-else-if="
+          !selectedFolderPath && !searchQuery && itemsToDisplay.length === 0
+        "
         class="flex h-full flex-col items-center justify-center py-20 text-center"
       >
         <div

@@ -54,11 +54,10 @@ export const itemApi = {
   getTree: (): Promise<TreeNode[]> => fetchApi<TreeNode[]>('/v1/items/tree'),
 
   /**
-   * Fetches direct children of a folder for the right panel.
-   * The endpoint returns FolderContent { folder, children }.
+   * Fetches direct children of a folder using its string path.
    */
-  getChildren: (id: string): Promise<FolderContent> =>
-    fetchApi<FolderContent>(`/v1/items/${id}/contents`),
+  getChildrenByPath: (path: string): Promise<FolderContent> =>
+    fetchApi<FolderContent>(`/v1/items/by-path?path=${encodeURIComponent(path)}`),
 
   /**
    * Searches for items by name across the entire structure.
