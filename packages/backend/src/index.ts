@@ -11,19 +11,22 @@ import { errorHandlerPlugin } from "./plugins/errorHandler.plugin";
 const itemRepository = new PostgresItemRepository();
 
 // 2. Initialize Domain Services (Core)
-// We inject the repository into the service (Dependency Injection)
 const itemService = new ItemServiceImpl(itemRepository);
 
 // 3. Initialize Elysia App (Driving)
 const app = new Elysia()
   .use(cors())
   .use(Logestic.preset("fancy"))
-  .use(errorHandlerPlugin)
+  .use(errorHandlerPlugin);
 
-  // Health check
-  .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+// Health check
+app.get("/health", () => ({
+  status: "ok",
+  timestamp: new Date().toISOString(),
+}));
 
-  // Mount Controllers under /api/v1
+// 4. Mount API Controllers under /api/v1
+app
   .group("/api/v1", (app) => app.use(itemController(itemService)))
   .listen(env.PORT);
 

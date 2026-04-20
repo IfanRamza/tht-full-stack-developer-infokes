@@ -8,7 +8,9 @@
     "db:seed": "bun --env-file=../../.env src/adapters/driven/postgresql/seed.ts",
     "db:reset": "bun run db:migrate && bun run db:flush && bun run db:seed",
     "test": "bun test --env-file=../../.env",
-    "dev": "bun --env-file=../../.env --watch src/index.ts"
+    "dev": "bun --env-file=../../.env --watch src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir ./dist",
+    "start": "NODE_ENV=production bun --env-file=../../.env dist/index.js"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.1",
