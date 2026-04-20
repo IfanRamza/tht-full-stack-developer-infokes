@@ -56,16 +56,26 @@ export const itemApi = {
   /**
    * Fetches direct children of a folder using its string path.
    */
-  getChildrenByPath: (path: string): Promise<FolderContent> =>
-    fetchApi<FolderContent>(`/v1/items/by-path?path=${encodeURIComponent(path)}`),
+  getChildrenByPath: (
+    path: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<FolderContent> =>
+    fetchApi<FolderContent>(
+      `/v1/items/by-path?path=${encodeURIComponent(path)}&limit=${limit}&offset=${offset}`
+    ),
 
   /**
    * Searches for items by name, bounded by an optional directory path string.
    * Accepts an AbortSignal for cancelling stale in-flight requests.
    */
-  search: (query: string, path?: string, signal?: AbortSignal): Promise<Item[]> => {
+  search: (
+    query: string,
+    path?: string,
+    signal?: AbortSignal
+  ): Promise<Item[]> => {
     let url = `/v1/items/search?q=${encodeURIComponent(query)}`
     if (path) url += `&path=${encodeURIComponent(path)}`
     return fetchApi<Item[]>(url, { signal })
-  }
+  },
 }

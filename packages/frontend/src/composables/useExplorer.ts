@@ -7,11 +7,19 @@ const tree = ref<TreeNode[]>([])
 const selectedFolderPath = ref<string>('')
 const selectedFolderName = ref<string | null>(null)
 const children = ref<Item[]>([])
+const totalChildren = ref(0)
+const currentOffset = ref(0)
 
 const isTreeLoading = ref(false)
 const isChildrenLoading = ref(false)
+const isChildrenLoadingMore = ref(false)
 const treeError = ref<string | null>(null)
 const contentError = ref<string | null>(null)
+
+// Computational math for pagination scaling
+const hasMoreChildren = computed(
+  () => children.value.length < totalChildren.value
+)
 
 // History tracking
 const canGoBack = ref(false)
@@ -49,8 +57,10 @@ router.afterEach((to) => {
     selectedFolderPath.value = ''
     selectedFolderName.value = null
     children.value = []
+    totalChildren.value = 0
+    currentOffset.value = 0
     contentError.value = null
-    return 
+    return
   }
 
   _fetchChildren(pathString)
@@ -59,19 +69,42 @@ router.afterEach((to) => {
 /**
  * Internal private loader synchronized with URL state
  */
-async function _fetchChildren(path: string) {
-  selectedFolderPath.value = path
-  isChildrenLoading.value = true
+async function _fetchChildren(path: string, isLoadMore = false) {
+  if (!isLoadMore) {
+    selectedFolderPath.value = path
+    children.value = []
+    currentOffset.value = 0
+    isChildrenLoading.value = true
+  } else {
+    isChildrenLoadingMore.value = true
+  }
+
   contentError.value = null
+
   try {
-    const { folder, children: items } = await itemApi.getChildrenByPath(path)
+    const limit = 50
+    const {
+      folder,
+      children: items,
+      totalElements,
+    } = await itemApi.getChildrenByPath(path, limit, currentOffset.value)
+
     selectedFolderName.value = folder.name
-    children.value = items
+    totalChildren.value = totalElements
+
+    if (isLoadMore) {
+      children.value.push(...items)
+    } else {
+      children.value = items
+    }
+
+    currentOffset.value += items.length
   } catch (e: unknown) {
     contentError.value =
       e instanceof Error ? e.message : 'Failed to load folder contents'
   } finally {
     isChildrenLoading.value = false
+    isChildrenLoadingMore.value = false
   }
 }
 
@@ -114,6 +147,12 @@ export function useExplorer() {
     router.push({ path: `/${parentPath}` })
   }
 
+  function loadMoreChildren() {
+    if (hasMoreChildren.value && !isChildrenLoadingMore.value) {
+      _fetchChildren(selectedFolderPath.value, true)
+    }
+  }
+
   /**
    * Resolves a backend DB UUID path like `/uuid1/uuid2` into `/Documents/Work`
    * by matching against the loaded frontend tree map.
@@ -143,6 +182,8 @@ export function useExplorer() {
     children,
     isTreeLoading,
     isChildrenLoading,
+    isChildrenLoadingMore,
+    hasMoreChildren,
     treeError,
     contentError,
     canGoBack,
@@ -152,6 +193,7 @@ export function useExplorer() {
     goBack,
     goForward,
     goUp,
+    loadMoreChildren,
     getHumanReadableLocation,
   }
 }

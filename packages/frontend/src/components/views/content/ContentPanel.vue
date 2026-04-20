@@ -1,17 +1,32 @@
 <script setup lang="ts">
 import BaseButton from '@/components/base/BaseButton.vue'
+import EmptyState from '@/components/base/EmptyState.vue'
 import { useExplorer } from '@/composables/useExplorer'
 import { useSearch } from '@/composables/useSearch'
-import { AlertTriangle, FolderOpen, LayoutGrid, List, Search, SearchX } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
-import EmptyState from '@/components/base/EmptyState.vue'
+import { sortItems } from '@/utils/sort'
+import {
+  AlertTriangle,
+  FolderOpen,
+  LayoutGrid,
+  List,
+  Search,
+  SearchX,
+} from 'lucide-vue-next'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import GridSkeleton from '../skeleton/GridSkeleton.vue'
 import ListSkeleton from '../skeleton/ListSkeleton.vue'
 import ContentItem from './ContentItem.vue'
-import { sortItems } from '@/utils/sort'
 
-const { children, isChildrenLoading, selectedFolderPath, selectedFolderName, contentError } =
-  useExplorer()
+const {
+  children,
+  isChildrenLoading,
+  isChildrenLoadingMore,
+  hasMoreChildren,
+  loadMoreChildren,
+  selectedFolderPath,
+  selectedFolderName,
+  contentError,
+} = useExplorer()
 const { searchResults, isSearching, searchQuery } = useSearch()
 
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -28,11 +43,40 @@ const isLoading = computed(() => {
 
 const displayTitle = computed(() => {
   if (searchQuery.value.trim()) {
-    return selectedFolderName.value 
+    return selectedFolderName.value
       ? `Search Results in "${selectedFolderName.value}"`
       : `Search Results in "This PC"`
   }
   return selectedFolderName.value || 'Home'
+})
+
+// Sentinel target for Infinite Scroll
+const scrollSentinel = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+// Create the observer once
+observer = new IntersectionObserver(
+  (entries) => {
+    if (
+      entries[0].isIntersecting &&
+      hasMoreChildren.value &&
+      !isChildrenLoadingMore.value
+    ) {
+      loadMoreChildren()
+    }
+  },
+  { rootMargin: '200px', threshold: 0.1 }
+)
+
+// Re-attach whenever the sentinel mounts into/out of the DOM.
+// The sentinel is inside a v-else block so it doesn't exist until items load.
+watch(scrollSentinel, (el, prevEl) => {
+  if (prevEl) observer!.unobserve(prevEl)
+  if (el) observer!.observe(el)
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
 })
 </script>
 
@@ -93,7 +137,9 @@ const displayTitle = computed(() => {
 
       <!-- No Selection State (Only show if not searching) -->
       <EmptyState
-        v-else-if="!selectedFolderPath && !searchQuery && itemsToDisplay.length === 0"
+        v-else-if="
+          !selectedFolderPath && !searchQuery && itemsToDisplay.length === 0
+        "
         :icon="FolderOpen"
         theme="primary"
         title="Select a folder"
@@ -140,8 +186,15 @@ const displayTitle = computed(() => {
         >
           <div class="mr-3 w-8 shrink-0"></div>
           <!-- icon space -->
-          <div class="flex-1 pr-4" :class="searchQuery.trim() ? 'min-w-[150px]' : 'min-w-[200px]'">Name</div>
-          <div v-if="searchQuery.trim()" class="flex-1 min-w-[150px] pr-4">Location</div>
+          <div
+            class="flex-1 pr-4"
+            :class="searchQuery.trim() ? 'min-w-[150px]' : 'min-w-[200px]'"
+          >
+            Name
+          </div>
+          <div v-if="searchQuery.trim()" class="min-w-[150px] flex-1 pr-4">
+            Location
+          </div>
           <div class="w-[160px] shrink-0 pr-4">Date modified</div>
           <div class="w-[120px] shrink-0 pr-4">Type</div>
           <div class="w-[100px] shrink-0 text-right">Size</div>
@@ -162,6 +215,17 @@ const displayTitle = computed(() => {
             :view-mode="viewMode"
             :show-location="!!searchQuery.trim()"
           />
+        </div>
+
+        <!-- Infinite Scroll Sentinel -->
+        <div
+          v-show="hasMoreChildren && !searchQuery.trim()"
+          ref="scrollSentinel"
+          class="text-text-secondary flex h-16 w-full items-center justify-center text-sm font-medium"
+        >
+          <span v-if="isChildrenLoadingMore" class="animate-pulse"
+            >Loading next chunk...</span
+          >
         </div>
       </div>
     </div>
