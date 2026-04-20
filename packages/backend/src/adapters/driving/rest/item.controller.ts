@@ -28,7 +28,7 @@ export const itemController = (service: ItemService) =>
           limit: t.Optional(t.Numeric()),
           offset: t.Optional(t.Numeric()),
         }),
-      }
+      },
     )
 
     /**
@@ -59,7 +59,11 @@ export const itemController = (service: ItemService) =>
     .get(
       "/by-path",
       async ({ query: { path, limit, offset } }) => {
-        const contents = await service.getFolderContentsByPath(path, limit, offset);
+        const contents = await service.getFolderContentsByPath(
+          path,
+          limit,
+          offset,
+        );
         return successResponse(contents);
       },
       {
@@ -115,5 +119,4 @@ export const itemController = (service: ItemService) =>
           mimeType: t.Optional(t.Nullable(t.String())),
         }),
       },
-    )
-
+    );

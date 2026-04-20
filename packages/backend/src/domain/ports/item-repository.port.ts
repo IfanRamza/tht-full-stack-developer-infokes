@@ -13,11 +13,13 @@ export interface ItemRepository {
   /**
    * Find an item by its parent and name to prevent duplication.
    */
-  findByNameAndParentId(name: string, parentId: string | null): Promise<Item | null>;
+  findByNameAndParentId(
+    name: string,
+    parentId: string | null,
+  ): Promise<Item | null>;
 
   /**
-   * Fetch ALL folders in the database.
-   * Useful for loading the left-side tree navigation on startup.
+   * Fetch ALL folders in the database. (Initial load)
    */
   findAllFolders(): Promise<Item[]>;
 
@@ -26,10 +28,10 @@ export interface ItemRepository {
    * Use null to fetch root items.
    */
   findChildrenByParentId(
-    parentId: string | null, 
-    limit?: number, 
+    parentId: string | null,
+    limit?: number,
     offset?: number,
-    typeFilter?: "file" | "folder"
+    typeFilter?: "file" | "folder",
   ): Promise<{ data: Item[]; total: number }>;
 
   /**
