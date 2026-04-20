@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExplorer } from '@/composables/useExplorer'
 import { formatDate, formatSize } from '@/utils/formatters'
 import type { Item } from '@explorer/shared'
 import { computed } from 'vue'
@@ -11,12 +12,21 @@ const props = defineProps<{
 
 const isFolder = computed(() => props.item.type === 'folder')
 const mode = computed(() => props.viewMode || 'grid')
+
+const { selectFolder } = useExplorer()
+
+const handleNavigate = () => {
+  if (isFolder.value) {
+    selectFolder(props.item.id)
+  }
+}
 </script>
 
 <template>
   <!-- Grid View -->
   <div
     v-if="mode === 'grid'"
+    @dblclick="handleNavigate"
     class="group bg-bg-secondary hover:border-accent-blue/50 relative flex cursor-pointer flex-col overflow-hidden rounded border border-transparent p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
   >
     <!-- Hover Shim Gradient -->
@@ -47,6 +57,7 @@ const mode = computed(() => props.viewMode || 'grid')
   <!-- List View -->
   <div
     v-else
+    @dblclick="handleNavigate"
     class="group border-border/50 hover:bg-bg-hover relative flex cursor-pointer items-center border-b px-4 py-2 transition-colors"
   >
     <!-- Icon -->
@@ -63,20 +74,20 @@ const mode = computed(() => props.viewMode || 'grid')
 
     <!-- Date Modified -->
     <div
-      class="text-text-secondary w-[120px] truncate pr-4 text-[12px] capitalize"
+      class="text-text-secondary w-[200px] truncate pr-4 text-[12px] capitalize"
     >
       {{ formatDate(item.updatedAt) }}
     </div>
 
     <!-- Type -->
     <div
-      class="text-text-secondary w-[100px] truncate pr-4 text-right font-mono text-[12px]"
+      class="text-text-secondary w-[120px] truncate pr-4 font-mono text-[12px]"
     >
       {{ isFolder ? 'File Folder' : item.name.split('.').pop() + ' File' }}
     </div>
 
     <!-- Size -->
-    <div class="text-text-secondary w-[180px] truncate text-right text-[12px]">
+    <div class="text-text-secondary w-[100px] truncate text-right text-[12px]">
       {{ isFolder ? '' : formatSize(item.size) }}
     </div>
   </div>

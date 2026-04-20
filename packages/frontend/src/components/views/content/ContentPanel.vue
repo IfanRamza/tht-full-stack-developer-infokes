@@ -6,6 +6,7 @@ import { computed, ref } from 'vue'
 import GridSkeleton from '../skeleton/GridSkeleton.vue'
 import ListSkeleton from '../skeleton/ListSkeleton.vue'
 import ContentItem from './ContentItem.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const { children, isChildrenLoading, selectedFolderId, selectedFolderName } =
   useExplorer()
@@ -41,28 +42,22 @@ const displayTitle = computed(() => {
       <div
         class="bg-bg-secondary border-border flex items-center gap-1 rounded-md border p-1"
       >
-        <button
-          class="text-text-muted hover:text-text-primary rounded p-1 transition-colors focus:outline-none"
-          :class="{
-            'bg-bg-active text-text-primary shadow-sm': viewMode === 'grid',
-            'hover:bg-bg-hover': viewMode !== 'grid',
-          }"
+        <BaseButton
+          variant="ghost"
+          :class="{ 'bg-bg-active text-text-primary shadow-sm': viewMode === 'grid' }"
           title="Grid View"
           @click="viewMode = 'grid'"
         >
           <LayoutGrid class="h-4 w-4" />
-        </button>
-        <button
-          class="text-text-muted hover:text-text-primary rounded p-1 transition-colors focus:outline-none"
-          :class="{
-            'bg-bg-active text-text-primary shadow-sm': viewMode === 'list',
-            'hover:bg-bg-hover': viewMode !== 'list',
-          }"
+        </BaseButton>
+        <BaseButton
+          variant="ghost"
+          :class="{ 'bg-bg-active text-text-primary shadow-sm': viewMode === 'list' }"
           title="List View"
           @click="viewMode = 'list'"
         >
           <List class="h-4 w-4" />
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -151,9 +146,9 @@ const displayTitle = computed(() => {
           <div class="mr-3 w-8"></div>
           <!-- icon space -->
           <div class="w-[200px] flex-1 pr-4">Name</div>
+          <div class="w-[200px] pr-4">Date modified</div>
           <div class="w-[120px] pr-4">Type</div>
-          <div class="w-[100px] pr-4 text-right">Size</div>
-          <div class="w-[180px] text-right">Date modified</div>
+          <div class="w-[100px] text-right">Size</div>
         </div>
 
         <!-- Render Items -->

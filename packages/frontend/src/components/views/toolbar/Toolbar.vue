@@ -8,8 +8,17 @@ import {
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import SearchBar from './SearchBar.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
-const { tree, selectedFolderId } = useExplorer()
+const { 
+  tree, 
+  selectedFolderId, 
+  canGoBack, 
+  canGoForward, 
+  goBack, 
+  goForward, 
+  goUp 
+} = useExplorer()
 
 // Recursive breadcrumb builder
 const breadcrumbs = computed(() => {
@@ -41,22 +50,15 @@ const breadcrumbs = computed(() => {
   >
     <!-- Window Nav Controls -->
     <div class="mr-4 flex items-center gap-1">
-      <button
-        class="text-text-secondary hover:bg-bg-hover hover:text-text-primary flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:opacity-30"
-      >
+      <BaseButton variant="icon" :disabled="!canGoBack" @click="goBack">
         <ChevronLeft class="h-5 w-5" />
-      </button>
-      <button
-        class="text-text-secondary hover:bg-bg-hover hover:text-text-primary flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:opacity-30"
-        disabled
-      >
+      </BaseButton>
+      <BaseButton variant="icon" :disabled="!canGoForward" @click="goForward">
         <ChevronRight class="h-5 w-5" />
-      </button>
-      <button
-        class="text-text-secondary hover:bg-bg-hover hover:text-text-primary flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:opacity-30"
-      >
+      </BaseButton>
+      <BaseButton variant="icon" :disabled="!selectedFolderId" @click="goUp">
         <ChevronUp class="h-5 w-5" />
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Breadcrumbs Path -->
