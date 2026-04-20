@@ -1,15 +1,18 @@
-import type { ApiResponse, ApiError } from '@explorer/shared'
+import type {
+  ApiError,
+  ApiResponse,
+  FolderContent,
+  Item,
+  TreeNode,
+} from '@explorer/shared'
 
-const BASE_URL = '/api/v1'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
-/**
- * Custom error class for API failures
- */
 export class ApiClientError extends Error {
   public code: string
-  public details?: any
+  public details?: unknown
 
-  constructor(message: string, code: string, details?: any) {
+  constructor(message: string, code: string, details?: unknown) {
     super(message)
     this.code = code
     this.details = details
@@ -17,13 +20,9 @@ export class ApiClientError extends Error {
   }
 }
 
-/**
- * Core wrapper around the Fetch API that handles 
- * authentication, response unwrapping, and error parsing.
- */
 async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${BASE_URL}${path}`
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -47,22 +46,26 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   return successJson.data
 }
 
-/**
- * API Service for Item-related operations
- */
 export const itemApi = {
   /**
-   * Fetches the hierarchical folder tree
+   * Fetches the full folder tree for the left panel.
+   * Returns all folders in a nested hierarchy.
    */
-  getTree: () => fetchApi<any[]>('/items/tree'),
+  getTree: (): Promise<TreeNode[]> => fetchApi<TreeNode[]>('/v1/items/tree'),
 
   /**
-   * Fetches direct children of a specific folder
+   * Fetches direct children of a folder for the right panel.
+   * The endpoint returns FolderContent { folder, children }.
    */
-  getChildren: (id: string) => fetchApi<any[]>(`/items/${id}/children`),
+  getChildren: (id: string): Promise<FolderContent> =>
+    fetchApi<FolderContent>(`/v1/items/${id}/contents`),
 
   /**
-   * Searches for items by name
+   * Searches for items by name across the entire structure.
+   * Accepts an AbortSignal for cancelling stale in-flight requests.
    */
-  search: (query: string) => fetchApi<any[]>(`/items/search?query=${encodeURIComponent(query)}`),
+  search: (query: string, signal?: AbortSignal): Promise<Item[]> =>
+    fetchApi<Item[]>(`/v1/items/search?q=${encodeURIComponent(query)}`, {
+      signal,
+    }),
 }
