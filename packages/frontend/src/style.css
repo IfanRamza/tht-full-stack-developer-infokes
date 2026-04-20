@@ -1,233 +1,43 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-text: #6b6375;
-  --color-text-h: #08060d;
-  --color-bg: #fff;
-  --color-border: #e5e4e7;
-  --color-code-bg: #f4f3ec;
-  --color-accent: #aa3bff;
-  --color-accent-bg: rgba(170, 59, 255, 0.1);
-  --color-accent-border: rgba(170, 59, 255, 0.5);
-  --color-social-bg: rgba(244, 243, 236, 0.5);
+  /* Backgrounds */
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #13131a;
+  --color-bg-tertiary: #1a1a24;
+  --color-bg-hover: #23232e;
+  --color-bg-active: #2d2d3a;
 
-  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, Consolas, monospace;
+  /* Accents */
+  --color-accent-blue: #3b82f6;
+  --color-accent-cyan: #06b6d4;
 
-  --shadow-custom:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* Text */
+  --color-text-primary: #f0f0f5;
+  --color-text-secondary: #a0a0b0;
+  --color-text-muted: #6a6a78;
+
+  /* Border & Shadow */
+  --color-border: #2a2a35;
+  --shadow: rgba(0, 0, 0, 0.4);
+
+  /* Typography */
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 }
 
 @layer base {
   :root {
-    color-scheme: light dark;
-    color: var(--color-text);
-    background: var(--color-bg);
+    color-scheme: dark;
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-text: #9ca3af;
-      --color-text-h: #f3f4f6;
-      --color-bg: #16171d;
-      --color-border: #2e303a;
-      --color-code-bg: #1f2028;
-      --color-accent: #c084fc;
-      --color-accent-bg: rgba(192, 132, 252, 0.15);
-      --color-accent-border: rgba(192, 132, 252, 0.5);
-      --color-social-bg: rgba(47, 48, 58, 0.5);
-      --shadow-custom:
-        rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-    }
-
-    #social .button-icon {
-      filter: invert(1) brightness(2);
-    }
-  }
-
-  h1,
-  h2 {
-    color: var(--color-text-h);
-    font-family: var(--font-heading);
-  }
-}
-
-/* Hero & Welcome Styles (Keeping these as they are used by HelloWorld.vue) */
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#app {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--color-border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--color-border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--color-border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--color-text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--color-social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow-custom);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--color-border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--color-border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--color-border);
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
