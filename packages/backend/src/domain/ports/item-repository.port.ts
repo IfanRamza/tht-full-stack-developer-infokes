@@ -41,8 +41,14 @@ export interface ItemRepository {
 
   /**
    * Search for items across the entire structure by name.
+   * Returns paginated results consistent with other list endpoints.
    */
-  searchByName(query: string, pathPrefix?: string): Promise<Item[]>;
+  searchByName(
+    query: string,
+    pathPrefix?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ data: Item[]; total: number }>;
 
   /**
    * Create a new folder or file.

@@ -23,8 +23,14 @@ export interface ItemService {
 
   /**
    * Searches for items by name across the entire tree.
+   * Returns paginated results with a total count for client-side "load more" logic.
    */
-  searchItems(query: string, pathString?: string): Promise<Item[]>;
+  searchItems(
+    query: string,
+    pathString?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ data: Item[]; total: number }>;
 
   /**
    * Creates a new folder or file.

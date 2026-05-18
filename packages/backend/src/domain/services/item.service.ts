@@ -1,3 +1,4 @@
+import { uuidv7 } from "uuidv7";
 import {
   ConflictError,
   NotFoundError,
@@ -6,7 +7,6 @@ import {
 import { FolderContent, Item, ItemTree } from "../models/item.model";
 import { ItemRepository } from "../ports/item-repository.port";
 import { ItemService } from "../ports/item-service.port";
-import { uuidv7 } from "uuidv7";
 
 export class ItemServiceImpl implements ItemService {
   constructor(private readonly itemRepository: ItemRepository) {}
@@ -103,7 +103,12 @@ export class ItemServiceImpl implements ItemService {
     return this.getFolderContents(currentFolder.id, limit, offset);
   }
 
-  async searchItems(query: string, pathString?: string): Promise<Item[]> {
+  async searchItems(
+    query: string,
+    pathString?: string,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ data: Item[]; total: number }> {
     let parentPathPrefix: string | undefined = undefined;
 
     if (pathString) {
@@ -130,7 +135,12 @@ export class ItemServiceImpl implements ItemService {
       }
     }
 
-    return this.itemRepository.searchByName(query, parentPathPrefix);
+    return this.itemRepository.searchByName(
+      query,
+      parentPathPrefix,
+      limit,
+      offset,
+    );
   }
 
   async createItem(

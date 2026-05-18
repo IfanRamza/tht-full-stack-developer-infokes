@@ -110,25 +110,42 @@ export class PostgresItemRepository implements ItemRepository {
     return rows.map((row) => this.mapToEntity(row));
   }
 
-  async searchByName(query: string, pathPrefix?: string): Promise<Item[]> {
+  async searchByName(
+    query: string,
+    pathPrefix?: string,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ data: Item[]; total: number }> {
     const conditions = [ilike(itemsTable.name, `%${query}%`)];
 
     if (pathPrefix) {
-      // Restrict mathematically to descendants of the specific UUID prefix
+      // Restrict to descendants of the specific UUID path prefix
       conditions.push(like(itemsTable.path, `${pathPrefix}%`));
     }
+
+    const whereClause = and(...conditions);
+
+    // Count total matches for pagination metadata
+    const [countRow] = await db
+      .select({ value: count() })
+      .from(itemsTable)
+      .where(whereClause);
 
     const rows = await db
       .select()
       .from(itemsTable)
-      .where(and(...conditions))
+      .where(whereClause)
       .orderBy(
         asc(sql`CASE WHEN ${itemsTable.type} = 'folder' THEN 0 ELSE 1 END`),
         itemsTable.name,
       )
-      .limit(50);
+      .limit(limit)
+      .offset(offset);
 
-    return rows.map((row) => this.mapToEntity(row));
+    return {
+      data: rows.map((row) => this.mapToEntity(row)),
+      total: countRow.value,
+    };
   }
 
   async create(

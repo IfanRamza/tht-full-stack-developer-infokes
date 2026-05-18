@@ -78,17 +78,20 @@ export const itemController = (service: ItemService) =>
     /**
      * GET /items/search?q=...
      * Searches items by name across the entire structure.
+     * Supports pagination via limit/offset for large result sets.
      */
     .get(
       "/search",
-      async ({ query: { q, path } }) => {
-        const results = await service.searchItems(q, path);
-        return successResponse(results, results.length);
+      async ({ query: { q, path, limit, offset } }) => {
+        const results = await service.searchItems(q, path, limit, offset);
+        return successResponse(results.data, results.total);
       },
       {
         query: t.Object({
-          q: t.String(),
+          q: t.String({ minLength: 1, maxLength: 100 }),
           path: t.Optional(t.String()),
+          limit: t.Optional(t.Numeric()),
+          offset: t.Optional(t.Numeric()),
         }),
       },
     )
