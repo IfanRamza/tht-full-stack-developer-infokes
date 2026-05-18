@@ -35,6 +35,7 @@ class MockItemRepository implements ItemRepository {
   create = mock();
   createWithId = mock();
   update = mock();
+  updateDescendantPaths = mock();
   delete = mock();
 }
 

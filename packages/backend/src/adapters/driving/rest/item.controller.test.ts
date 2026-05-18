@@ -40,6 +40,8 @@ class MockItemService implements ItemService {
   getFolderContentsByPath = mock();
   searchItems = mock();
   createItem = mock();
+  deleteItem = mock();
+  updateItem = mock();
 }
 
 describe("ItemController API Tests", () => {

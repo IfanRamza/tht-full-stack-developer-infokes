@@ -69,6 +69,15 @@ export interface ItemRepository {
   update(id: string, data: Partial<Item>): Promise<Item>;
 
   /**
+   * Bulk-update the materialized path of all descendants when a folder is moved.
+   * Replaces `oldPathPrefix` with `newPathPrefix` in every descendant's path column.
+   */
+  updateDescendantPaths(
+    oldPathPrefix: string,
+    newPathPrefix: string,
+  ): Promise<void>;
+
+  /**
    * Permanently delete an item (and its children via DB cascade).
    */
   delete(id: string): Promise<void>;

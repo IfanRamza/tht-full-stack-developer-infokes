@@ -122,4 +122,42 @@ export const itemController = (service: ItemService) =>
           mimeType: t.Optional(t.Nullable(t.String())),
         }),
       },
+    )
+
+    /**
+     * PATCH /items/:id
+     * Renames or moves an existing item.
+     * Supply `name` to rename, `parentId` to move (null = root), or both.
+     */
+    .patch(
+      "/:id",
+      async ({ params: { id }, body }) => {
+        const item = await service.updateItem(id, body);
+        return successResponse(item);
+      },
+      {
+        params: t.Object({ id: t.String() }),
+        body: t.Object({
+          name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+          parentId: t.Optional(t.Nullable(t.String())),
+        }),
+      },
+    )
+
+    /**
+     * DELETE /items/:id
+     * Permanently deletes an item and all its descendants.
+     * Returns 204 No Content on success.
+     */
+    .delete(
+      "/:id",
+      async ({ params: { id }, set }) => {
+        await service.deleteItem(id);
+        set.status = 204;
+        return;
+      },
+      {
+        params: t.Object({ id: t.String() }),
+      },
     );
+

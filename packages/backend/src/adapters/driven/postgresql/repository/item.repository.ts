@@ -217,6 +217,20 @@ export class PostgresItemRepository implements ItemRepository {
     return this.mapToEntity(row);
   }
 
+  async updateDescendantPaths(
+    oldPathPrefix: string,
+    newPathPrefix: string,
+  ): Promise<void> {
+    // Single bulk UPDATE using PostgreSQL REPLACE() — touches every descendant in one query.
+    // Pattern: all rows whose path starts with oldPathPrefix (the moved folder's old path).
+    await db
+      .update(itemsTable)
+      .set({
+        path: sql`REPLACE(${itemsTable.path}, ${oldPathPrefix}, ${newPathPrefix})`,
+      })
+      .where(like(itemsTable.path, `${oldPathPrefix}/%`));
+  }
+
   async delete(id: string): Promise<void> {
     await db.delete(itemsTable).where(eq(itemsTable.id, id));
   }

@@ -187,4 +187,83 @@ export class ItemServiceImpl implements ItemService {
       depth,
     });
   }
+
+  async deleteItem(id: string): Promise<void> {
+    const item = await this.itemRepository.findById(id);
+    if (!item) {
+      throw new NotFoundError(`Item with id '${id}' not found`);
+    }
+    await this.itemRepository.delete(id);
+  }
+
+  async updateItem(
+    id: string,
+    data: { name?: string; parentId?: string | null },
+  ): Promise<Item> {
+    const item = await this.itemRepository.findById(id);
+    if (!item) {
+      throw new NotFoundError(`Item with id '${id}' not found`);
+    }
+
+    const patch: Partial<Item> = {};
+    const isRename = data.name !== undefined && data.name !== item.name;
+    const isMove =
+      data.parentId !== undefined && data.parentId !== item.parentId;
+
+    // ── Rename validation ──────────────────────────────────────────────────
+    if (isRename) {
+      this.validateName(data.name!);
+      // Check for name conflict in the target parent (current if not moving)
+      const targetParent = isMove ? data.parentId! : item.parentId;
+      const conflict = await this.itemRepository.findByNameAndParentId(
+        data.name!,
+        targetParent,
+      );
+      if (conflict && conflict.id !== id) {
+        throw new ConflictError(
+          `An item named '${data.name}' already exists in this location`,
+        );
+      }
+      patch.name = data.name;
+    }
+
+    // ── Move logic ─────────────────────────────────────────────────────────
+    if (isMove) {
+      let newParentPath = "";
+      let newDepth = 0;
+
+      if (data.parentId !== null) {
+        const newParent = await this.itemRepository.findById(data.parentId!);
+        if (!newParent) {
+          throw new NotFoundError(
+            `Parent with id '${data.parentId}' not found`,
+          );
+        }
+        if (newParent.type !== "folder") {
+          throw new ValidationError(
+            `Target parent '${data.parentId}' is not a folder`,
+          );
+        }
+        if (newParent.depth >= 30) {
+          throw new ValidationError(`Maximum hierarchy depth of 30 exceeded.`);
+        }
+        newParentPath = newParent.path;
+        newDepth = newParent.depth + 1;
+      }
+
+      const oldPath = item.path;
+      const newPath = newParentPath ? `${newParentPath}/${id}` : `/${id}`;
+
+      patch.parentId = data.parentId ?? null;
+      patch.path = newPath;
+      patch.depth = newDepth;
+
+      // Bulk-update all descendants so their paths stay consistent
+      if (item.type === "folder") {
+        await this.itemRepository.updateDescendantPaths(oldPath, newPath);
+      }
+    }
+
+    return this.itemRepository.update(id, patch);
+  }
 }
