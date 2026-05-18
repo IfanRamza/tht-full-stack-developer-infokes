@@ -7,12 +7,14 @@ import { sortItems } from '@/utils/sort'
 import {
   AlertTriangle,
   FolderOpen,
+  FolderPlus,
   LayoutGrid,
   List,
   Search,
   SearchX,
+  X,
 } from 'lucide-vue-next'
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import GridSkeleton from '../skeleton/GridSkeleton.vue'
 import ListSkeleton from '../skeleton/ListSkeleton.vue'
 import ContentItem from './ContentItem.vue'
@@ -26,10 +28,50 @@ const {
   selectedFolderPath,
   selectedFolderName,
   contentError,
+  createItem,
+  deleteItem,
+  renameItem,
 } = useExplorer()
 const { searchResults, isSearching, searchQuery } = useSearch()
 
 const viewMode = ref<'grid' | 'list'>('grid')
+
+// ── New Folder creation state ─────────────────────────────────────────────
+const isCreating = ref(false)
+const newFolderName = ref('')
+const createError = ref<string | null>(null)
+const isCreatingLoading = ref(false)
+const newFolderInput = ref<HTMLInputElement | null>(null)
+
+async function startCreate() {
+  isCreating.value = true
+  newFolderName.value = ''
+  createError.value = null
+  await nextTick()
+  newFolderInput.value?.focus()
+}
+
+function cancelCreate() {
+  isCreating.value = false
+  newFolderName.value = ''
+  createError.value = null
+}
+
+async function confirmCreate() {
+  const name = newFolderName.value.trim()
+  if (!name) return
+  isCreatingLoading.value = true
+  createError.value = null
+  try {
+    await createItem({ name, type: 'folder', sortOrder: children.value.length })
+    isCreating.value = false
+    newFolderName.value = ''
+  } catch (e: unknown) {
+    createError.value = e instanceof Error ? e.message : 'Failed to create folder'
+  } finally {
+    isCreatingLoading.value = false
+  }
+}
 
 const itemsToDisplay = computed(() => {
   const source = searchQuery.value.trim() ? searchResults.value : children.value
@@ -84,35 +126,86 @@ onUnmounted(() => {
   <div class="content-panel flex h-full min-h-[400px] flex-col p-4">
     <!-- View Header (Active Folder Title + Controls) -->
     <div
-      class="border-border/50 mb-6 flex items-center justify-between border-b pb-2"
+      class="border-border/50 mb-4 flex items-center justify-between border-b pb-2"
     >
       <h2 class="text-text-primary text-xl font-semibold tracking-tight">
         {{ displayTitle }}
       </h2>
-      <div
-        class="bg-bg-secondary border-border flex items-center gap-1 rounded-md border p-1"
-      >
+      <div class="flex items-center gap-2">
+        <!-- New Folder Button (hidden while searching or no folder selected) -->
         <BaseButton
+          v-if="!searchQuery.trim() && selectedFolderPath"
+          id="new-folder-btn"
           variant="ghost"
-          :class="{
-            'bg-bg-active text-text-primary shadow-sm': viewMode === 'grid',
-          }"
-          title="Grid View"
-          @click="viewMode = 'grid'"
+          class="flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-accent-cyan"
+          title="New Folder"
+          @click="startCreate"
         >
-          <LayoutGrid class="h-4 w-4" />
+          <FolderPlus class="h-4 w-4" />
+          <span class="hidden sm:inline">New Folder</span>
         </BaseButton>
-        <BaseButton
-          variant="ghost"
-          :class="{
-            'bg-bg-active text-text-primary shadow-sm': viewMode === 'list',
-          }"
-          title="List View"
-          @click="viewMode = 'list'"
+
+        <!-- View toggle -->
+        <div
+          class="bg-bg-secondary border-border flex items-center gap-1 rounded-md border p-1"
         >
-          <List class="h-4 w-4" />
-        </BaseButton>
+          <BaseButton
+            variant="ghost"
+            :class="{
+              'bg-bg-active text-text-primary shadow-sm': viewMode === 'grid',
+            }"
+            title="Grid View"
+            @click="viewMode = 'grid'"
+          >
+            <LayoutGrid class="h-4 w-4" />
+          </BaseButton>
+          <BaseButton
+            variant="ghost"
+            :class="{
+              'bg-bg-active text-text-primary shadow-sm': viewMode === 'list',
+            }"
+            title="List View"
+            @click="viewMode = 'list'"
+          >
+            <List class="h-4 w-4" />
+          </BaseButton>
+        </div>
       </div>
+    </div>
+
+    <!-- Inline New Folder Form -->
+    <div
+      v-if="isCreating"
+      class="border-border/50 bg-bg-secondary mb-4 flex flex-col gap-2 rounded-lg border p-3"
+    >
+      <div class="flex items-center gap-2">
+        <FolderPlus class="h-4 w-4 text-accent-cyan shrink-0" />
+        <input
+          id="new-folder-input"
+          ref="newFolderInput"
+          v-model="newFolderName"
+          type="text"
+          placeholder="Folder name..."
+          class="flex-1 bg-transparent text-text-primary text-[13px] outline-none placeholder:text-text-muted"
+          @keyup.enter="confirmCreate"
+          @keyup.esc="cancelCreate"
+        />
+        <button
+          id="confirm-create-btn"
+          class="text-[12px] text-accent-cyan hover:text-accent-cyan/80 font-medium transition-colors disabled:opacity-50"
+          :disabled="isCreatingLoading || !newFolderName.trim()"
+          @click="confirmCreate"
+        >
+          {{ isCreatingLoading ? 'Creating...' : 'Create' }}
+        </button>
+        <button
+          class="text-text-muted hover:text-text-secondary transition-colors"
+          @click="cancelCreate"
+        >
+          <X class="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <p v-if="createError" class="text-[11px] text-red-400">{{ createError }}</p>
     </div>
 
     <!-- Main Lists -->
@@ -214,6 +307,8 @@ onUnmounted(() => {
             :item="item"
             :view-mode="viewMode"
             :show-location="!!searchQuery.trim()"
+            @delete="deleteItem(item.id)"
+            @rename="(newName) => renameItem(item.id, newName)"
           />
         </div>
 
