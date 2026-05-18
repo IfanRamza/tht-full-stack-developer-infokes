@@ -6,6 +6,7 @@ import {
 import { FolderContent, Item, ItemTree } from "../models/item.model";
 import { ItemRepository } from "../ports/item-repository.port";
 import { ItemService } from "../ports/item-service.port";
+import { uuidv7 } from "uuidv7";
 
 export class ItemServiceImpl implements ItemService {
   constructor(private readonly itemRepository: ItemRepository) {}
@@ -164,18 +165,16 @@ export class ItemServiceImpl implements ItemService {
       depth = parent.depth + 1;
     }
 
-    // Insert with a temporary path to get the DB-generated ID
-    const created = await this.itemRepository.create({
+    // Pre-generate the UUID so the full materialized path can be computed
+    // before touching the database — enables a single atomic INSERT.
+    const id = uuidv7();
+    const fullPath = parentPath ? `${parentPath}/${id}` : `/${id}`;
+
+    return this.itemRepository.createWithId({
       ...item,
-      path: parentPath,
+      id,
+      path: fullPath,
       depth,
     });
-
-    // Patch with the correct materialized path now that we have the ID
-    const fullPath = parentPath
-      ? `${parentPath}/${created.id}`
-      : `/${created.id}`;
-
-    return this.itemRepository.update(created.id, { path: fullPath });
   }
 }

@@ -46,8 +46,16 @@ export interface ItemRepository {
 
   /**
    * Create a new folder or file.
+   * @deprecated Prefer `createWithId()` to avoid a double DB write.
    */
   create(item: Omit<Item, "id" | "createdAt" | "updatedAt">): Promise<Item>;
+
+  /**
+   * Create a new item with a caller-supplied UUID.
+   * Allows the service to pre-compute the materialized path before inserting,
+   * eliminating the need for a second UPDATE round-trip.
+   */
+  createWithId(item: Omit<Item, "createdAt" | "updatedAt">): Promise<Item>;
 
   /**
    * Update an existing item (rename, move, etc).

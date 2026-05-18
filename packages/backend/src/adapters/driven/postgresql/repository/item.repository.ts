@@ -150,6 +150,27 @@ export class PostgresItemRepository implements ItemRepository {
     return this.mapToEntity(row);
   }
 
+  async createWithId(
+    item: Omit<Item, "createdAt" | "updatedAt">,
+  ): Promise<Item> {
+    const [row] = await db
+      .insert(itemsTable)
+      .values({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        parentId: item.parentId,
+        path: item.path,
+        depth: item.depth,
+        sortOrder: item.sortOrder,
+        size: item.size,
+        mimeType: item.mimeType,
+      })
+      .returning();
+
+    return this.mapToEntity(row);
+  }
+
   async update(id: string, data: Partial<Item>): Promise<Item> {
     const { createdAt: _createdAt, ...updateData } = data;
 

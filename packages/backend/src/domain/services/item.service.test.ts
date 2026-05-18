@@ -33,6 +33,7 @@ class MockItemRepository implements ItemRepository {
   findDescendantsByPath = mock();
   searchByName = mock();
   create = mock();
+  createWithId = mock();
   update = mock();
   delete = mock();
 }
@@ -98,13 +99,9 @@ describe("ItemService Unit Tests", () => {
      */
     it("should allow valid names on create", async () => {
       mockRepo.findByNameAndParentId.mockResolvedValueOnce(null);
-      mockRepo.create.mockResolvedValueOnce({
+      mockRepo.createWithId.mockResolvedValueOnce({
         id: "123",
         depth: 0,
-        path: "",
-      } as Item);
-      mockRepo.update.mockResolvedValueOnce({
-        id: "123",
         path: "/123",
       } as Item);
 
@@ -120,6 +117,38 @@ describe("ItemService Unit Tests", () => {
           mimeType: null,
         }),
       ).resolves.toBeDefined();
+    });
+
+    /**
+     * Test 3 — Single DB write: update() is never called during createItem
+     *
+     * Purpose:
+     *   Verifies the atomic single-write refactor is in effect.
+     *   The old implementation called `create()` then `update()` to patch the path.
+     *   With a pre-generated UUID, `createWithId()` receives the full path at insert
+     *   time, so `update()` must never be invoked.
+     *
+     * Expected result:
+     *   - `mockRepo.update` has zero calls after a successful `createItem()`.
+     */
+    it("should never call update() during createItem — single atomic write only", async () => {
+      mockRepo.findByNameAndParentId.mockResolvedValueOnce(null);
+      mockRepo.createWithId.mockResolvedValueOnce({
+        id: "abc",
+        depth: 0,
+        path: "/abc",
+      } as Item);
+
+      await service.createItem({
+        name: "SingleWriteFolder",
+        type: "folder",
+        parentId: null,
+        sortOrder: 0,
+        size: 0,
+        mimeType: null,
+      });
+
+      expect(mockRepo.update).not.toHaveBeenCalled();
     });
   });
 
