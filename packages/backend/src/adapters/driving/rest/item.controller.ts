@@ -1,6 +1,10 @@
 import { Elysia, t } from "elysia";
 import { ItemService } from "../../../domain/ports/item-service.port";
 import { successResponse } from "../../../utils/response";
+import {
+  getIdempotencyCache,
+  setIdempotencyCache,
+} from "../../../utils/idempotency";
 
 export const itemController = (service: ItemService) =>
   new Elysia({ prefix: "/items" })
@@ -100,17 +104,40 @@ export const itemController = (service: ItemService) =>
      * POST /items
      * Creates a new folder or file.
      * `path` and `depth` are intentionally absent — computed server-side.
+     *
+     * Supports idempotent retries via the `Idempotency-Key` header.
+     * If a key is provided and a response was already stored for it,
+     * the cached response is returned immediately without re-executing.
      */
     .post(
       "/",
-      async ({ body, set }) => {
+      async ({ body, set, headers }) => {
+        const idempotencyKey = headers["idempotency-key"];
+
+        // Replay cached response for duplicate requests
+        if (idempotencyKey) {
+          const cached = getIdempotencyCache(idempotencyKey);
+          if (cached !== null) {
+            set.status = 200; // 200 signals "replayed, not newly created"
+            return cached;
+          }
+        }
+
         const item = await service.createItem({
           ...body,
           size: body.size ?? 0,
           mimeType: body.mimeType ?? null,
         });
+
         set.status = 201;
-        return successResponse(item);
+        const response = successResponse(item);
+
+        // Store the result so the same key can be replayed
+        if (idempotencyKey) {
+          setIdempotencyCache(idempotencyKey, response);
+        }
+
+        return response;
       },
       {
         body: t.Object({
