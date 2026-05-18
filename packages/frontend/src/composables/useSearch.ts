@@ -31,11 +31,12 @@ async function performSearch(query: string) {
   const { selectedFolderPath } = useExplorer()
   
   try {
-    searchResults.value = await itemApi.search(
+    const result = await itemApi.search(
       query, 
       selectedFolderPath.value, 
       abortController.signal
     )
+    searchResults.value = result.data
   } catch (e: unknown) {
     // Check AbortError
     if (e instanceof DOMException && e.name === 'AbortError') return

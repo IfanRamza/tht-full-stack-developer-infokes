@@ -67,15 +67,18 @@ export const itemApi = {
 
   /**
    * Searches for items by name, bounded by an optional directory path string.
+   * Supports pagination via limit/offset.
    * Accepts an AbortSignal for cancelling stale in-flight requests.
    */
   search: (
     query: string,
     path?: string,
-    signal?: AbortSignal
-  ): Promise<Item[]> => {
-    let url = `/v1/items/search?q=${encodeURIComponent(query)}`
+    signal?: AbortSignal,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ data: Item[]; total: number }> => {
+    let url = `/v1/items/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`
     if (path) url += `&path=${encodeURIComponent(path)}`
-    return fetchApi<Item[]>(url, { signal })
+    return fetchApi<{ data: Item[]; total: number }>(url, { signal })
   },
 }
