@@ -15,7 +15,7 @@ const itemService = new ItemServiceImpl(itemRepository);
 
 // 3. Initialize Elysia App (Driving)
 const app = new Elysia()
-  .use(cors())
+  .use(cors({ origin: env.CORS_ORIGIN }))
   .use(Logestic.preset("fancy"))
   .use(errorHandlerPlugin);
 

@@ -1,6 +1,7 @@
 import Elysia from "elysia";
 import { errorResponse } from "../utils/response";
 import { ConflictError, NotFoundError, ValidationError } from "../domain/errors/domain.error";
+import { env } from "../config/env";
 
 export const errorHandlerPlugin = new Elysia({ name: "error-handler" }).onError(
   ({ code, error, set }) => {
@@ -27,9 +28,12 @@ export const errorHandlerPlugin = new Elysia({ name: "error-handler" }).onError(
       return errorResponse(error.message, "BAD_REQUEST");
     }
 
+    // Unhandled error — hide internal details from clients in production
     set.status = 500;
     const message =
-      error instanceof Error ? error.message : "An unexpected error occurred";
+      env.NODE_ENV !== "production"
+        ? (error instanceof Error ? error.message : "An unexpected error occurred")
+        : "Internal server error";
     return errorResponse(message);
   },
 );
