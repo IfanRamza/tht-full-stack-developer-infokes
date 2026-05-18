@@ -31,6 +31,11 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
     },
   })
 
+  // 204 No Content — nothing to parse
+  if (response.status === 204) {
+    return undefined as T
+  }
+
   const json = await response.json()
 
   if (!response.ok || json.success === false) {
@@ -81,4 +86,40 @@ export const itemApi = {
     if (path) url += `&path=${encodeURIComponent(path)}`
     return fetchApi<{ data: Item[]; total: number }>(url, { signal })
   },
+
+  /**
+   * Creates a new folder or file.
+   * Pass an `idempotencyKey` (e.g. a UUID) to enable safe retries:
+   * repeated calls with the same key return the original response.
+   */
+  createItem: (
+    body: { name: string; type: 'folder' | 'file'; parentId: string | null; sortOrder: number; size?: number; mimeType?: string | null },
+    idempotencyKey?: string
+  ): Promise<Item> => {
+    const headers: Record<string, string> = {}
+    if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
+    return fetchApi<Item>('/v1/items', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    })
+  },
+
+  /**
+   * Renames or moves an item. Supply `name` to rename, `parentId` to move.
+   */
+  updateItem: (
+    id: string,
+    data: { name?: string; parentId?: string | null }
+  ): Promise<Item> =>
+    fetchApi<Item>(`/v1/items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * Permanently deletes an item and all its descendants.
+   */
+  deleteItem: (id: string): Promise<void> =>
+    fetchApi<void>(`/v1/items/${id}`, { method: 'DELETE' }),
 }

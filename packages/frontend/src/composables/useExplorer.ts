@@ -175,6 +175,65 @@ export function useExplorer() {
     }
   })
 
+  /**
+   * Creates a new item in the current folder.
+   * Pass an `idempotencyKey` for safe retry behavior.
+   */
+  async function createItem(
+    body: { name: string; type: 'folder' | 'file'; sortOrder: number; size?: number; mimeType?: string | null },
+    idempotencyKey?: string
+  ): Promise<Item> {
+    const parentId = selectedFolderPath.value
+      ? (await itemApi.getChildrenByPath(selectedFolderPath.value, 1, 0)).folder.id
+      : null
+
+    const item = await itemApi.createItem({ ...body, parentId }, idempotencyKey)
+    children.value.push(item)
+    totalChildren.value += 1
+
+    // Refresh the tree if a folder was created
+    if (item.type === 'folder') {
+      await loadTree()
+    }
+    return item
+  }
+
+  /**
+   * Permanently deletes an item by ID.
+   * Removes the item from the current view and refreshes the tree if it was a folder.
+   */
+  async function deleteItem(id: string): Promise<void> {
+    const item = children.value.find((c) => c.id === id)
+    await itemApi.deleteItem(id)
+
+    // Optimistic update — remove from local list
+    children.value = children.value.filter((c) => c.id !== id)
+    totalChildren.value = Math.max(0, totalChildren.value - 1)
+
+    // Removed folder must be reflected in the tree panel
+    if (item?.type === 'folder') {
+      await loadTree()
+    }
+  }
+
+  /**
+   * Renames an item in place.
+   * Updates the local children list immediately (optimistic UI).
+   */
+  async function renameItem(id: string, newName: string): Promise<Item> {
+    const updated = await itemApi.updateItem(id, { name: newName })
+
+    // Optimistic update — patch the name in the local list
+    const idx = children.value.findIndex((c) => c.id === id)
+    if (idx !== -1) children.value[idx] = updated
+
+    // Folder rename must be reflected in the tree panel
+    if (updated.type === 'folder') {
+      await loadTree()
+    }
+    return updated
+  }
+
   return {
     tree,
     selectedFolderPath,
@@ -195,5 +254,8 @@ export function useExplorer() {
     goUp,
     loadMoreChildren,
     getHumanReadableLocation,
+    createItem,
+    deleteItem,
+    renameItem,
   }
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useExplorer } from '@/composables/useExplorer'
-import { AlertTriangle } from 'lucide-vue-next'
+import { AlertTriangle, RefreshCw } from 'lucide-vue-next'
 import FolderTreeNode from './FolderTreeNode.vue'
 
-const { tree, isTreeLoading, treeError } = useExplorer()
+const { tree, isTreeLoading, treeError, loadTree } = useExplorer()
 </script>
 
 <template>
@@ -20,9 +20,19 @@ const { tree, isTreeLoading, treeError } = useExplorer()
     </div>
 
     <!-- Error State -->
-    <div v-else-if="treeError" class="flex items-start gap-2 px-5 py-2 text-[13px] text-red-400">
-      <AlertTriangle class="h-4 w-4 shrink-0 mt-0.5 opacity-80" />
-      <span class="leading-tight">{{ treeError }}</span>
+    <div v-else-if="treeError" class="flex flex-col gap-2 px-5 py-2">
+      <div class="flex items-start gap-2 text-[13px] text-red-400">
+        <AlertTriangle class="h-4 w-4 shrink-0 mt-0.5 opacity-80" />
+        <span class="leading-tight">{{ treeError }}</span>
+      </div>
+      <button
+        id="sidebar-retry-btn"
+        class="flex items-center gap-1.5 text-[12px] text-text-muted hover:text-accent-cyan transition-colors w-fit"
+        @click="loadTree"
+      >
+        <RefreshCw class="h-3 w-3" />
+        Retry
+      </button>
     </div>
 
     <!-- Empty State -->
