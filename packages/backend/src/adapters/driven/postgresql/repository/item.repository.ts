@@ -202,14 +202,14 @@ export class PostgresItemRepository implements ItemRepository {
   }
 
   async update(id: string, data: Partial<Item>): Promise<Item> {
-    const { createdAt: _createdAt, ...updateData } = data;
+    // Strip fields that must never be overwritten by application code.
+    // updatedAt is intentionally omitted — the DB trigger (trg_items_updated_at)
+    // sets it automatically on every UPDATE, making it tamper-proof.
+    const { createdAt: _createdAt, updatedAt: _updatedAt, ...updateData } = data;
 
     const [row] = await db
       .update(itemsTable)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(itemsTable.id, id))
       .returning();
 
