@@ -2,6 +2,7 @@ import { and, asc, count, eq, ilike, isNull, like, sql } from "drizzle-orm";
 import { db } from "../../../../config/database";
 import { Item } from "../../../../domain/models/item.model";
 import { ItemRepository } from "../../../../domain/ports/item-repository.port";
+import { ConflictError } from "../../../../domain/errors/domain.error";
 import { items as itemsTable } from "../schema";
 
 export class PostgresItemRepository implements ItemRepository {
@@ -153,22 +154,34 @@ export class PostgresItemRepository implements ItemRepository {
   async createWithId(
     item: Omit<Item, "createdAt" | "updatedAt">,
   ): Promise<Item> {
-    const [row] = await db
-      .insert(itemsTable)
-      .values({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        parentId: item.parentId,
-        path: item.path,
-        depth: item.depth,
-        sortOrder: item.sortOrder,
-        size: item.size,
-        mimeType: item.mimeType,
-      })
-      .returning();
+    try {
+      const [row] = await db
+        .insert(itemsTable)
+        .values({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          parentId: item.parentId,
+          path: item.path,
+          depth: item.depth,
+          sortOrder: item.sortOrder,
+          size: item.size,
+          mimeType: item.mimeType,
+        })
+        .returning();
 
-    return this.mapToEntity(row);
+      return this.mapToEntity(row);
+    } catch (err: unknown) {
+      // PostgreSQL error code 23505 = unique_violation
+      // The DB constraint (uq_items_name_parent) fires here when two concurrent
+      // POSTs both pass the app-level check — the DB is the authoritative guard.
+      if (typeof err === "object" && err !== null && (err as any).code === "23505") {
+        throw new ConflictError(
+          `An item named '${item.name}' already exists in this location`,
+        );
+      }
+      throw err;
+    }
   }
 
   async update(id: string, data: Partial<Item>): Promise<Item> {

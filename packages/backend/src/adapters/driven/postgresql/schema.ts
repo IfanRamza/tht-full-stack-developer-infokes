@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -41,5 +42,10 @@ export const items = pgTable(
     index("idx_items_parent_id").on(table.parentId),
     index("idx_items_type").on(table.type),
     index("idx_items_path").on(table.path),
+    // Composite index: makes every hop in path resolution (findByNameAndParentId) an index scan
+    index("idx_items_parent_name").on(table.parentId, table.name),
+    // Unique constraint: DB-level guard against duplicate names in the same folder
+    // Prevents TOCTOU race where two concurrent POSTs could both pass the app-level check
+    uniqueIndex("uq_items_name_parent").on(table.name, table.parentId),
   ],
 );
